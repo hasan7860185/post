@@ -1,1 +1,121 @@
- 
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>التحقق من الترخيص - FBGroupMaster</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <style>
+    body {
+      background-color: #f0f2f5;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      min-width: 400px;
+      min-height: 300px;
+    }
+    
+    .license-container {
+      width: 90%;
+      max-width: 500px;
+      margin: 50px auto;
+      background-color: #fff;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      padding: 20px;
+      text-align: center;
+    }
+    
+    .license-logo {
+      margin-bottom: 20px;
+    }
+    
+    .license-logo img {
+      width: 80px;
+      height: auto;
+    }
+    
+    .license-title {
+      font-size: 1.5rem;
+      color: #1877f2;
+      margin-bottom: 20px;
+    }
+    
+    .license-form {
+      margin-bottom: 20px;
+    }
+    
+    .license-input {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      font-size: 1rem;
+      margin-bottom: 15px;
+      direction: ltr;
+      text-align: center;
+    }
+    
+    .license-button {
+      background-color: #1877f2;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      padding: 12px 20px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: background-color 0.3s;
+      width: 100%;
+    }
+    
+    .license-button:hover {
+      background-color: #166fe5;
+    }
+    
+    .license-status {
+      margin-top: 15px;
+      padding: 10px;
+      border-radius: 5px;
+      display: none;
+    }
+    
+    .license-status.error {
+      background-color: #ffebee;
+      color: #c62828;
+      display: block;
+    }
+    
+    .license-status.success {
+      background-color: #e8f5e9;
+      color: #2e7d32;
+      display: block;
+    }
+    
+    .license-footer {
+      margin-top: 20px;
+      font-size: 0.8rem;
+      color: #666;
+    }
+  </style>
+</head>
+<body>
+  <div class="license-container">
+    <div class="license-logo">
+      <img src="images/icon128.png" alt="FBGroupMaster Logo">
+    </div>
+    
+    <div class="license-title">تفعيل FBGroupMaster</div>
+    
+    <div class="license-form">
+      <input type="text" class="license-input" id="license-key" placeholder="أدخل مفتاح الترخيص" autocomplete="off">
+      <button class="license-button" id="verify-license">تحقق من الترخيص</button>
+    </div>
+    
+    <div class="license-status" id="license-status"></div>
+    
+    <div class="license-footer">
+      للحصول على مفتاح ترخيص، يرجى التواصل مع المطور
+    </div>
+  </div>
+
+  <script src="js/license.js"></script>
+</body>
+</html> 

@@ -1,0 +1,29 @@
+[
+  {
+    "key": "ABCD-1234-EFGH-5678-IJKL-9012",
+    "name": "أحمد محمد",
+    "email": "ahmed@example.com",
+    "createdAt": "2023-05-15T10:30:00Z",
+    "expiry": "2024-05-15T10:30:00Z",
+    "revoked": false,
+    "notes": "ترخيص تجريبي لمدة سنة"
+  },
+  {
+    "key": "MNOP-3456-QRST-7890-UVWX-1234",
+    "name": "سارة عبدالله",
+    "email": "sara@example.com",
+    "createdAt": "2023-06-20T14:45:00Z",
+    "expiry": "2023-12-20T14:45:00Z",
+    "revoked": false,
+    "notes": "ترخيص تجريبي لمدة 6 أشهر"
+  },
+  {
+    "key": "YZAB-5678-CDEF-9012-GHIJ-3456",
+    "name": "محمد خالد",
+    "email": "mohamed@example.com",
+    "createdAt": "2023-04-10T09:15:00Z",
+    "expiry": "2023-10-10T09:15:00Z",
+    "revoked": true,
+    "notes": "تم إلغاء الترخيص بسبب انتهاك الشروط والأحكام"
+  }
+] 

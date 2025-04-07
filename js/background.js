@@ -30,14 +30,80 @@ chrome.action.onClicked.addListener((tab) => {
  * Create new extension window
  */
 function createExtensionWindow() {
-  chrome.windows.create({
-    url: 'popup.html',
-    type: 'popup',
-    width: 800,
-    height: 700
-  }, (window) => {
-    extensionWindow = window;
+  // التحقق من وجود ترخيص صالح قبل فتح النافذة
+  checkLicense().then(licenseValid => {
+    // تحديد الصفحة التي سيتم فتحها
+    const pageToOpen = licenseValid ? 'popup.html' : 'license.html';
+    
+    chrome.windows.create({
+      url: pageToOpen,
+      type: 'popup',
+      width: 800,
+      height: 700
+    }, (window) => {
+      extensionWindow = window;
+    });
   });
+}
+
+/**
+ * التحقق من صلاحية الترخيص
+ * @returns {Promise<boolean>} وعد يتم حله بقيمة boolean تشير إلى صلاحية الترخيص
+ */
+function checkLicense() {
+  return new Promise((resolve) => {
+    chrome.storage.local.get(['license'], function(result) {
+      // التحقق من وجود بيانات الترخيص
+      if (!result.license || !result.license.key || !result.license.valid) {
+        console.log('No valid license found');
+        resolve(false);
+        return;
+      }
+      
+      // التحقق من تاريخ انتهاء الترخيص
+      const expiryDate = new Date(result.license.expiry);
+      const now = new Date();
+      
+      if (expiryDate < now) {
+        console.log('License has expired');
+        resolve(false);
+        return;
+      }
+      
+      // التحقق من معرف الجهاز (لمنع نقل الترخيص)
+      const currentDeviceId = generateDeviceId();
+      if (result.license.deviceId && result.license.deviceId !== currentDeviceId) {
+        console.log('Device ID mismatch');
+        resolve(false);
+        return;
+      }
+      
+      console.log('Valid license found');
+      resolve(true);
+    });
+  });
+}
+
+/**
+ * إنشاء معرّف فريد للجهاز
+ * @returns {string} معرّف الجهاز
+ */
+function generateDeviceId() {
+  // استخدام معلومات المتصفح لإنشاء معرّف
+  const navigator_info = navigator.userAgent;
+  const screen_info = {
+    height: screen.height || '',
+    width: screen.width || '',
+    pixelDepth: screen.pixelDepth || ''
+  };
+  
+  let uid = navigator_info.replace(/\D+/g, '');
+  uid += screen_info.height;
+  uid += screen_info.width;
+  uid += screen_info.pixelDepth;
+  
+  // تحويل المعرف إلى سلسلة أكثر أمانًا
+  return btoa(uid).substring(0, 32);
 }
 
 // Current posting state

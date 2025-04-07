@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>إدارة التراخيص - FBGroupMaster</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+  <style>
+    body {
+      background-color: #f0f2f5;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      padding: 20px;
+    }
+    
+    .admin-container {
+      background-color: #fff;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    
+    .admin-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid #eee;
+      padding-bottom: 15px;
+      margin-bottom: 20px;
+    }
+    
+    .admin-header h1 {
+      color: #1877f2;
+      font-size: 1.8rem;
+      margin: 0;
+    }
+    
+    .admin-form {
+      margin-bottom: 30px;
+    }
+    
+    .form-label {
+      font-weight: 500;
+    }
+    
+    .license-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    
+    .license-table th {
+      background-color: #f0f2f5;
+      padding: 12px;
+      text-align: right;
+    }
+    
+    .license-table td {
+      padding: 12px;
+      border-bottom: 1px solid #eee;
+    }
+    
+    .license-key {
+      font-family: monospace;
+      direction: ltr;
+      text-align: left;
+    }
+    
+    .status-active {
+      color: #28a745;
+      font-weight: 500;
+    }
+    
+    .status-revoked {
+      color: #dc3545;
+      font-weight: 500;
+    }
+    
+    .status-expired {
+      color: #ffc107;
+      font-weight: 500;
+    }
+    
+    .action-btn {
+      padding: 5px 10px;
+      font-size: 0.8rem;
+      margin-right: 5px;
+    }
+    
+    #message-container {
+      display: none;
+      padding: 12px;
+      border-radius: 5px;
+      margin-bottom: 20px;
+    }
+    
+    #message-container.success {
+      background-color: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+    
+    #message-container.error {
+      background-color: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+    
+    .loading {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(255, 255, 255, 0.8);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      display: none;
+    }
+    
+    .loading-spinner {
+      width: 50px;
+      height: 50px;
+      border: 5px solid #f3f3f3;
+      border-top: 5px solid #1877f2;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div id="message-container"></div>
+    
+    <div class="admin-container">
+      <div class="admin-header">
+        <h1>إدارة التراخيص - FBGroupMaster</h1>
+        <button id="refresh-btn" class="btn btn-outline-primary">تحديث</button>
+      </div>
+      
+      <div class="admin-form">
+        <h3 class="mb-3">إنشاء ترخيص جديد</h3>
+        <form id="license-form">
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <label for="name" class="form-label">اسم المستخدم</label>
+              <input type="text" class="form-control" id="name" required>
+            </div>
+            <div class="col-md-6">
+              <label for="email" class="form-label">البريد الإلكتروني</label>
+              <input type="email" class="form-control" id="email" required>
+            </div>
+          </div>
+          
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <label for="duration" class="form-label">مدة الترخيص (بالأيام)</label>
+              <input type="number" class="form-control" id="duration" min="1" value="365" required>
+            </div>
+            <div class="col-md-6">
+              <label for="key-length" class="form-label">طول مفتاح الترخيص</label>
+              <select class="form-select" id="key-length">
+                <option value="16">16 حرف</option>
+                <option value="24" selected>24 حرف</option>
+                <option value="32">32 حرف</option>
+              </select>
+            </div>
+          </div>
+          
+          <div class="mb-3">
+            <label for="notes" class="form-label">ملاحظات</label>
+            <textarea class="form-control" id="notes" rows="2"></textarea>
+          </div>
+          
+          <button type="submit" class="btn btn-primary">إنشاء ترخيص</button>
+        </form>
+      </div>
+    </div>
+    
+    <div class="admin-container">
+      <h3 class="mb-3">قائمة التراخيص</h3>
+      <div class="table-responsive">
+        <table class="license-table" id="license-table">
+          <thead>
+            <tr>
+              <th>المفتاح</th>
+              <th>المستخدم</th>
+              <th>البريد الإلكتروني</th>
+              <th>تاريخ الإنشاء</th>
+              <th>تاريخ الانتهاء</th>
+              <th>الحالة</th>
+              <th>الإجراءات</th>
+            </tr>
+          </thead>
+          <tbody id="licenses-list">
+            <!-- سيتم إضافة التراخيص هنا ديناميكيًا -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  
+  <!-- لوحة التحميل -->
+  <div class="loading" id="loading">
+    <div class="loading-spinner"></div>
+  </div>
+  
+  <script src="../js/admin-license.js"></script>
+</body>
+</html> 

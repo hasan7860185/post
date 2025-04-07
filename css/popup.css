@@ -1,0 +1,117 @@
+/* أنماط المنشورات المجدولة */
+.scheduled-post {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 15px;
+  background-color: #fff;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+.scheduled-post:hover {
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.scheduled-post .view-section {
+  position: relative;
+}
+
+.scheduled-post .edit-section {
+  background-color: #f8f9fa;
+  border-radius: 6px;
+  padding: 10px;
+}
+
+.scheduled-post .scheduled-post-status {
+  font-weight: bold;
+}
+
+.scheduled-post .post-content {
+  margin-top: 8px;
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.scheduled-post .edit-post-btn,
+.scheduled-post .remove-post-btn {
+  transition: all 0.2s ease;
+  margin-right: 5px;
+}
+
+.scheduled-post .edit-post-btn:hover {
+  background-color: #0d6efd;
+  color: white;
+}
+
+.scheduled-post .remove-post-btn:hover {
+  background-color: #dc3545;
+  color: white;
+}
+
+.status-pending {
+  color: #ffc107;
+}
+
+.status-processing {
+  color: #0dcaf0;
+}
+
+.status-completed {
+  color: #198754;
+}
+
+.status-failed {
+  color: #dc3545;
+}
+
+/* تحسين عرض النص داخل الأزرار الصفراء */
+.schedule-button, 
+button.btn-warning, 
+.btn-warning {
+  color: #000 !important;
+  background-color: #ffc107;
+  border-color: #ffc107;
+}
+
+/* تحسين عرض نص المنشور المجدول */
+.post-content {
+  color: #333 !important;
+  font-size: 14px !important;
+  margin-top: 8px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+  line-height: 1.4;
+}
+
+/* إصلاح مشكلة العرض في الخلفية الصفراء */
+.badge {
+  display: inline-block;
+  padding: 0.35em 0.65em;
+  font-size: 0.75em;
+  font-weight: 700;
+  line-height: 1;
+  color: #000 !important;
+  text-align: center;
+  white-space: nowrap;
+  vertical-align: baseline;
+  border-radius: 0.25rem;
+}
+
+.badge.bg-warning,
+.badge.bg-info,
+.badge.bg-secondary,
+.badge.bg-primary {
+  color: #000 !important;
+}
+
+/* إضافة تباعد وتحسين القراءة */
+.recurring-info,
+.post-count,
+.group-count {
+  margin-right: 4px;
+  font-weight: bold;
+  padding: 4px 8px;
+} 

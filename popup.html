@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FBGroupMaster</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <style>
+    /* Window-specific styles */
+    body {
+      min-width: 780px;
+      min-height: 600px;
+      overflow-x: hidden;
+    }
+    
+    /* Window title bar */
+    .window-titlebar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background-color: #1877f2;
+      color: white;
+      padding: 8px 12px;
+      -webkit-app-region: drag; /* Make titlebar draggable */
+    }
+    
+    .window-title {
+      font-weight: bold;
+      font-size: 16px;
+      display: flex;
+      align-items: center;
+    }
+    
+    .window-title img {
+      height: 24px;
+      margin-right: 8px;
+    }
+    
+    .window-controls {
+      -webkit-app-region: no-drag; /* Make control buttons not draggable */
+    }
+    
+    .window-close {
+      background: none;
+      border: none;
+      color: white;
+      font-size: 18px;
+      cursor: pointer;
+      padding: 4px 8px;
+      border-radius: 4px;
+    }
+    
+    .window-close:hover {
+      background-color: rgba(255, 255, 255, 0.2);
+    }
+  </style>
+</head>
+<body>
+  <!-- Window Title Bar -->
+  <div class="window-titlebar">
+    <div class="window-title">
+      <img src="images/icon48.png" alt="Logo">
+      FBGroupMaster
+    </div>
+    <div class="window-controls">
+      <button id="close-window" class="window-close" title="Close Window">&times;</button>
+    </div>
+  </div>
+
+  <div class="popup-container">
+    <!-- Navigation Tabs -->
+    <div class="nav-tabs">
+      <div class="nav-tab active" data-tab="create">Create Post</div>
+      <div class="nav-tab" data-tab="scheduled">Scheduled Posts</div>
+      <div class="nav-tab" data-tab="groups">Groups</div>
+    </div>
+    
+    <!-- Main Content -->
+    <div class="main-content">
+      <!-- Create Post Tab -->
+      <div class="tab-content active" id="create-tab">
+        <!-- Post Creation Form -->
+        <div class="form-group">
+          <label for="post-content" class="form-label">Post Content</label>
+          <textarea id="post-content" class="form-control" placeholder="Enter your post content here..."></textarea>
+        </div>
+        
+        <!-- Image Upload Section -->
+        <div class="form-group">
+          <label class="form-label">Post Images</label>
+          <div class="image-upload-container">
+            <div class="image-preview-area" id="image-preview-area">
+              <div class="no-images-message" id="no-images-message">No images added</div>
+            </div>
+            <div class="image-upload-controls">
+              <label for="image-upload" class="btn btn-secondary btn-sm">Add Image</label>
+              <input type="file" id="image-upload" style="display: none;" accept="image/*" multiple>
+              <button id="clear-images-btn" class="btn btn-danger btn-sm">Clear Images</button>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Enable Multiple Posts -->
+        <div class="form-group">
+          <div class="d-flex align-items-center">
+            <label for="enable-multiple-posts" class="form-label mb-0 ml-2">Enable Multiple Posts</label>
+            <input type="checkbox" id="enable-multiple-posts">
+          </div>
+          <p class="text-muted small">Add multiple posts to randomly select from when posting</p>
+        </div>
+        
+        <!-- Multiple Posts Section (shown when option is enabled) -->
+        <div id="multiple-posts-section" style="display: none;">
+          <div class="post-controls">
+            <button id="add-post-btn" class="btn btn-primary btn-sm">Add New Post</button>
+            <div class="form-group mb-0">
+              <div class="d-flex align-items-center">
+                <label for="random-selection" class="form-label mb-0 ml-2">Random Selection</label>
+                <input type="checkbox" id="random-selection" checked>
+              </div>
+            </div>
+          </div>
+          
+          <div class="post-list" id="post-list">
+            <!-- Posts will be added dynamically here -->
+          </div>
+        </div>
+        
+        <!-- Groups Section -->
+        <div class="form-group mt-3">
+          <label class="form-label">Selected Groups</label>
+          <div class="d-flex justify-content-between align-items-center">
+            <div id="selected-groups-count">0 groups selected</div>
+            <button id="select-groups-btn" class="btn btn-primary btn-sm">Select Groups</button>
+          </div>
+        </div>
+        
+        <!-- Scheduling Options -->
+        <div class="card mb-3 schedule-section" id="schedule-section">
+          <div class="card-header bg-success text-white">
+            <h5 class="mb-0">Scheduling Options</h5>
+          </div>
+          <div class="card-body">
+            <div class="form-check mb-3">
+              <input type="checkbox" class="form-check-input" id="enable-scheduling">
+              <label class="form-check-label" for="enable-scheduling">Schedule post</label>
+            </div>
+            
+            <div id="scheduling-options" style="display: none;">
+              <div class="mb-3">
+                <label for="schedule-time">Schedule time:</label>
+                <input type="datetime-local" class="form-control" id="schedule-time">
+              </div>
+              
+              <div class="mb-3">
+                <div class="form-check">
+                  <input type="checkbox" class="form-check-input" id="enable-recurring">
+                  <label class="form-check-label" for="enable-recurring">Recurring post</label>
+                </div>
+              </div>
+              
+              <div id="recurring-options" style="display: none;">
+                <div class="mb-3">
+                  <label>Recurring type:</label>
+                  <div class="form-check">
+                    <input type="radio" class="form-check-input" id="recurring-daily" name="recurring-type" value="daily" checked>
+                    <label class="form-check-label" for="recurring-daily">Daily</label>
+                  </div>
+                  <div class="form-check">
+                    <input type="radio" class="form-check-input" id="recurring-weekly" name="recurring-type" value="weekly">
+                    <label class="form-check-label" for="recurring-weekly">Weekly</label>
+                  </div>
+                  <div class="form-check">
+                    <input type="radio" class="form-check-input" id="recurring-monthly" name="recurring-type" value="monthly">
+                    <label class="form-check-label" for="recurring-monthly">Monthly</label>
+                  </div>
+                </div>
+                
+                <div class="mb-3">
+                  <label for="recurring-count">Number of recurrences:</label>
+                  <input type="number" class="form-control" id="recurring-count" min="1" max="50" value="1" inputmode="numeric">
+                </div>
+              </div>
+              
+              <div class="form-check mb-3">
+                <input type="checkbox" class="form-check-input" id="clear-after-schedule" checked>
+                <label class="form-check-label" for="clear-after-schedule">Clear form after scheduling</label>
+              </div>
+              
+              <div id="schedule-status" class="alert" style="display:none;"></div>
+              
+              <button type="button" id="schedule-btn" class="btn btn-success w-100">
+                <i class="fas fa-calendar-alt"></i> Schedule Post
+              </button>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Posting Interval Settings -->
+        <div class="card mb-3">
+          <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Posting Interval Settings</h5>
+          </div>
+          <div class="card-body">
+            <div class="mb-3">
+              <label for="post-interval-min">Time between posts (seconds):</label>
+              <input type="number" class="form-control" id="post-interval-min" min="10" value="30" inputmode="numeric">
+              <small class="form-text text-muted">Minimum: 10 seconds</small>
+            </div>
+            
+            <div class="mb-3">
+              <label for="post-interval-max">Maximum time (seconds):</label>
+              <input type="number" class="form-control" id="post-interval-max" min="10" value="60" inputmode="numeric">
+            </div>
+            
+            <div class="form-check">
+              <input type="checkbox" class="form-check-input" id="random-interval">
+              <label class="form-check-label" for="random-interval">Random delay between each post</label>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Pause Settings -->
+        <div class="card mb-3">
+          <div class="card-header bg-warning text-dark">
+            <h5 class="mb-0">Pause Settings</h5>
+          </div>
+          <div class="card-body">
+            <div class="form-check mb-3">
+              <input type="checkbox" class="form-check-input" id="enable-pause">
+              <label class="form-check-label" for="enable-pause">Enable automatic pause</label>
+            </div>
+            
+            <div id="pause-settings" style="display: none;">
+              <div class="mb-3">
+                <label for="posts-before-pause">Posts before pause:</label>
+                <input type="number" class="form-control" id="posts-before-pause" min="1" value="5" inputmode="numeric">
+              </div>
+              
+              <div class="mb-3">
+                <label for="pause-duration">Pause duration (minutes):</label>
+                <input type="number" class="form-control" id="pause-duration" min="1" value="15" inputmode="numeric">
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Action Buttons -->
+        <div class="mt-3 d-flex justify-content-between">
+          <button id="post-now-btn" class="btn btn-primary">Post Now</button>
+          <button id="schedule-post-btn" class="btn btn-success" style="display: none;">Schedule Post</button>
+        </div>
+        
+        <!-- Posting Status Section -->
+        <div class="card mb-3" id="posting-status" style="display: none;">
+          <div class="card-header bg-info text-white">
+            <h5 class="mb-0">Posting Status</h5>
+          </div>
+          <div class="card-body">
+            <div id="status-message" class="mb-2">Waiting to start...</div>
+            
+            <div class="progress mb-2">
+              <div id="posting-progress" class="progress-bar progress-bar-striped progress-bar-animated" 
+                   role="progressbar" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+            </div>
+            
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <span id="progress-text">0/0</span>
+              <div id="countdown-timer" class="countdown-display"></div>
+            </div>
+            
+            <button id="stop-posting-btn" class="btn btn-danger w-100">
+              <i class="fas fa-stop-circle"></i> Stop Posting
+            </button>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Scheduled Posts Tab -->
+      <div class="tab-content" id="scheduled-tab">
+        <h3>Scheduled Posts</h3>
+        <div id="scheduled-posts-container" class="mt-3">
+          <div id="no-scheduled-posts" class="text-center text-muted p-3">
+            No scheduled posts found
+          </div>
+        </div>
+      </div>
+      
+      <!-- Groups Tab -->
+      <div class="tab-content" id="groups-tab">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h3>My Groups</h3>
+          <div class="btn-group">
+            <button id="refresh-groups-btn" class="btn btn-sm btn-primary">Refresh Groups</button>
+            <button id="add-group-manually-btn" class="btn btn-sm btn-success">Add Group</button>
+            <button id="manage-collections-btn" class="btn btn-sm btn-secondary">Collections</button>
+          </div>
+        </div>
+        
+        <!-- Group Controls -->
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <div class="collection-select-container" style="flex: 1;">
+            <label for="group-collection-select">Filter by collection:</label>
+            <select id="group-collection-select" class="form-control">
+              <option value="all">All Groups</option>
+              <!-- Collections will be added dynamically -->
+            </select>
+          </div>
+          <div class="group-actions ml-2">
+            <button id="select-all-groups-btn" class="btn btn-sm btn-outline-primary">Select All</button>
+            <button id="deselect-all-groups-btn" class="btn btn-sm btn-outline-secondary">Deselect All</button>
+            <button id="save-selected-groups-btn" class="btn btn-sm btn-outline-success">Save Selection</button>
+          </div>
+        </div>
+        
+        <!-- Groups List -->
+        <div class="groups-container" id="groups-container">
+          <div id="no-groups" class="text-center p-3">
+            No groups found. Click "Refresh Groups" to start.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Templates -->
+  <template id="image-preview-template">
+    <div class="image-preview">
+      <img class="preview-img">
+      <button class="remove-image-btn">&times;</button>
+    </div>
+  </template>
+  
+  <!-- Post Item Template -->
+  <template id="post-item-template">
+    <div class="post-item">
+      <div class="post-item-header">
+        <span class="post-number"></span>
+        <div class="post-actions">
+          <button class="edit-post-images-btn" title="Edit Images"><i class="fas fa-images"></i></button>
+          <button class="remove-post-btn" title="Remove Post">&times;</button>
+        </div>
+      </div>
+      <div class="post-item-content"></div>
+      <div class="post-item-images"></div>
+    </div>
+  </template>
+  
+  <!-- Group Item Template -->
+  <template id="group-item-template">
+    <div class="group-item">
+      <span class="group-name"></span>
+      <input type="checkbox" class="group-checkbox">
+    </div>
+  </template>
+  
+  <!-- Scheduled Post Template -->
+  <template id="scheduled-post-template">
+    <div class="scheduled-post mb-2 border rounded p-2">
+      <div class="d-flex justify-content-between align-items-center">
+        <div>
+          <span class="fw-bold me-2 scheduled-post-status"></span>
+          <small class="text-muted scheduled-post-time"></small>
+        </div>
+        <div>
+          <button class="btn btn-sm btn-outline-primary edit-post-btn" title="Edit Post"><i class="fas fa-edit"></i></button>
+          <button class="btn btn-sm btn-outline-danger remove-post-btn" title="Delete Post"><i class="fas fa-trash"></i></button>
+        </div>
+      </div>
+      <div class="mt-1">
+        <span class="badge bg-secondary me-1 post-count"></span>
+        <span class="badge bg-primary me-1 group-count"></span>
+        <span class="badge bg-info recurring-info" style="display: none;"></span>
+      </div>
+    </div>
+  </template>
+  
+  <!-- Groups Selection Modal -->
+  <div id="groups-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title">Select Groups</div>
+        <button class="modal-close" id="close-groups-modal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <!-- Group Filter Controls -->
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <div class="collection-select-container" style="flex: 1;">
+            <label for="modal-group-collection-select">Filter by collection:</label>
+            <select id="modal-group-collection-select" class="form-control">
+              <option value="all">All Groups</option>
+              <!-- Collections will be added dynamically -->
+            </select>
+          </div>
+          <div class="group-actions ml-2">
+            <button id="modal-select-all-groups-btn" class="btn btn-sm btn-outline-primary">Select All</button>
+            <button id="modal-deselect-all-groups-btn" class="btn btn-sm btn-outline-secondary">Deselect All</button>
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <input type="text" id="group-search" class="form-control" placeholder="Search for a group...">
+        </div>
+        <div class="group-list" id="modal-groups-container" style="max-height: 300px;">
+          <!-- Will be filled dynamically -->
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button id="confirm-group-selection" class="btn btn-primary">Confirm</button>
+        <button id="cancel-group-selection" class="btn btn-danger">Cancel</button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Add Group Modal -->
+  <div id="add-group-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title">Add Group Manually</div>
+        <button class="modal-close" id="close-add-group-modal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <ul class="nav-tabs mb-3">
+          <li class="nav-tab active" data-modal-tab="single-group">Single Group</li>
+          <li class="nav-tab" data-modal-tab="bulk-import">Bulk Import</li>
+        </ul>
+        
+        <!-- Single Group Form -->
+        <div class="modal-tab-content active" id="single-group-tab">
+          <div class="form-group">
+            <label for="group-name">Group Name:</label>
+            <input type="text" id="group-name" class="form-control" placeholder="Enter group name">
+          </div>
+          <div class="form-group">
+            <label for="group-url">Group URL:</label>
+            <input type="text" id="group-url" class="form-control" placeholder="https://www.facebook.com/groups/...">
+          </div>
+          <div class="form-group">
+            <label for="group-collection">Add to Collection:</label>
+            <div class="d-flex">
+              <select id="group-collection" class="form-control">
+                <option value="">No Collection</option>
+                <!-- Collections will be added dynamically -->
+              </select>
+              <button id="create-collection-btn" class="btn btn-primary btn-sm ms-2">New</button>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Bulk Import Form -->
+        <div class="modal-tab-content" id="bulk-import-tab" style="display: none;">
+          <div class="form-group">
+            <label for="bulk-collection">Add to Collection:</label>
+            <div class="d-flex">
+              <select id="bulk-collection" class="form-control">
+                <option value="">No Collection</option>
+                <!-- Collections will be added dynamically -->
+              </select>
+              <button id="bulk-create-collection-btn" class="btn btn-primary btn-sm ms-2">New</button>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="bulk-format">Format:</label>
+            <select id="bulk-format" class="form-control">
+              <option value="url-only">URLs Only (One per line)</option>
+              <option value="name-url">Name and URL (Name,URL format)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="bulk-groups">Group URLs (one per line):</label>
+            <textarea id="bulk-groups" class="form-control" rows="6" placeholder="https://www.facebook.com/groups/..."></textarea>
+          </div>
+          <div class="form-group">
+            <div class="d-flex align-items-center">
+              <label for="bulk-import-file" class="btn btn-secondary btn-sm">Import from Text File</label>
+              <input type="file" id="bulk-import-file" accept=".txt,.csv" style="display: none;">
+              <span id="file-name" class="ms-2 small text-muted"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button id="add-group-btn" class="btn btn-primary">Add</button>
+        <button id="cancel-add-group-btn" class="btn btn-danger">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Collections Management Modal -->
+  <div id="collections-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title">Manage Collections</div>
+        <button class="modal-close" id="close-collections-modal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="d-flex justify-content-between mb-3">
+          <div class="form-group" style="flex: 1; margin-right: 10px;">
+            <input type="text" id="new-collection-name" class="form-control" placeholder="New collection name">
+          </div>
+          <button id="add-collection-btn" class="btn btn-primary">Add</button>
+        </div>
+        
+        <div class="collections-list" id="collections-container">
+          <!-- Collections will be displayed here -->
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button id="close-collections-btn" class="btn btn-primary">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Collection Item Template -->
+  <template id="collection-item-template">
+    <div class="collection-item">
+      <div class="d-flex justify-content-between align-items-center p-2 border-bottom">
+        <span class="collection-name"></span>
+        <div>
+          <span class="badge bg-primary collection-count me-2">0 groups</span>
+          <button class="btn btn-sm btn-outline-danger remove-collection-btn">Delete</button>
+        </div>
+      </div>
+    </div>
+  </template>
+
+  <!-- Add styles for the countdown timer -->
+  <style>
+    .countdown-display {
+      font-weight: bold;
+      font-family: monospace;
+      font-size: 1.2rem;
+      padding: 0.3rem 0.6rem;
+      background-color: rgba(0,0,0,0.1);
+      border-radius: 4px;
+    }
+    
+    @keyframes pulse {
+      0% { opacity: 1; }
+      50% { opacity: 0.5; }
+      100% { opacity: 1; }
+    }
+    
+    .countdown-active {
+      animation: pulse 1s infinite;
+      color: #dc3545;
+    }
+  </style>
+
+  <script src="js/popup.js"></script>
+</body>
+</html> 

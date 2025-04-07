@@ -2,16 +2,50 @@
  * نظام إدارة التراخيص - لوحة المسؤول
  */
 
-// المتغيرات العامة
-const GIST_ID = 'YOUR_GIST_ID'; // استبدل بمعرف Gist الخاص بك
-const GITHUB_TOKEN = 'YOUR_GITHUB_TOKEN'; // استبدل بالتوكن الخاص بك (يجب إنشاؤه من إعدادات GitHub)
+// المتغيرات العامة - استخدم نفس معرف Gist المستخدم في license.js
+const GIST_ID = '234b3837c2ca95e54c68c55a8bfd0e3c'; // استبدل هذا بمعرف Gist الخاص بك
+// لا تحتفظ بتوكن GitHub في كود مفتوح - استخدم طريقة آمنة للتخزين
+// في هذا المثال، سنستخدم توكن افتراضي للتجربة فقط - قم بتغييره
+const GITHUB_TOKEN = ''; // سنطلب من المستخدم إدخال التوكن
+
+// التحقق من وجود واجهة التخزين المحلي
+function setupLocalStorage() {
+  if (typeof localStorage === 'undefined') {
+    console.log('محاكاة التخزين المحلي');
+    window.localStorage = {
+      getItem: function(key) {
+        return this[key] || null;
+      },
+      setItem: function(key, value) {
+        this[key] = value;
+      },
+      removeItem: function(key) {
+        delete this[key];
+      }
+    };
+  }
+}
+
+// تنفيذ إعداد التخزين المحلي
+setupLocalStorage();
 
 document.addEventListener('DOMContentLoaded', function() {
+  console.log('تم تحميل صفحة إدارة التراخيص');
+  
   // المراجع للعناصر
   const licenseForm = document.getElementById('license-form');
   const refreshBtn = document.getElementById('refresh-btn');
   const messageContainer = document.getElementById('message-container');
   const loadingIndicator = document.getElementById('loading');
+  
+  // التحقق من وجود توكن GitHub محفوظ محلياً
+  const savedToken = localStorage.getItem('github_token');
+  if (savedToken) {
+    console.log('تم العثور على توكن GitHub محفوظ');
+  } else {
+    // طلب التوكن من المستخدم
+    promptForGithubToken();
+  }
   
   // تحميل قائمة التراخيص عند فتح الصفحة
   loadLicenses();
@@ -28,45 +62,118 @@ document.addEventListener('DOMContentLoaded', function() {
   });
   
   /**
-   * تحميل قائمة التراخيص من GitHub Gist
+   * طلب توكن GitHub من المستخدم
+   */
+  function promptForGithubToken() {
+    const token = prompt('يرجى إدخال توكن GitHub الخاص بك للوصول إلى التراخيص:');
+    if (token) {
+      localStorage.setItem('github_token', token);
+      showMessage('تم حفظ التوكن بنجاح', 'success');
+    } else {
+      showMessage('لم يتم إدخال توكن GitHub، ستكون بعض الوظائف محدودة', 'error');
+    }
+  }
+  
+  /**
+   * الحصول على توكن GitHub المحفوظ
+   */
+  function getGithubToken() {
+    const token = localStorage.getItem('github_token') || GITHUB_TOKEN;
+    if (!token) {
+      showMessage('لم يتم العثور على توكن GitHub. بعض الوظائف قد لا تعمل.', 'error');
+    }
+    return token;
+  }
+  
+  /**
+   * تحميل قائمة التراخيص من GitHub Gist أو الملف المحلي
    */
   function loadLicenses() {
     showLoading(true);
+    console.log('جاري تحميل التراخيص');
     
-    fetch(`https://api.github.com/gists/${GIST_ID}`, {
-      headers: {
-        'Authorization': `token ${GITHUB_TOKEN}`,
-        'Accept': 'application/vnd.github.v3+json'
-      }
-    })
-    .then(response => {
-      if (!response.ok) {
-        throw new Error('فشل في الاتصال بالخادم');
-      }
-      return response.json();
-    })
-    .then(data => {
-      try {
-        const licenseFile = data.files['licenses.json'];
-        if (!licenseFile) {
-          throw new Error('ملف التراخيص غير موجود');
+    // محاولة استخدام الـ Gist أولاً
+    const token = getGithubToken();
+    
+    if (token) {
+      // استخدام GitHub Gist
+      console.log('استخدام GitHub Gist للتراخيص');
+      fetch(`https://api.github.com/gists/${GIST_ID}`, {
+        headers: {
+          'Authorization': `token ${token}`,
+          'Accept': 'application/vnd.github.v3+json'
         }
+      })
+      .then(response => {
+        console.log('استجابة الخادم:', response.status);
+        if (!response.ok) {
+          throw new Error(`فشل في الاتصال بالخادم: ${response.status}`);
+        }
+        return response.json();
+      })
+      .then(data => {
+        try {
+          console.log('تم استلام البيانات من GitHub');
+          
+          const licenseFile = data.files['licenses.json'];
+          if (!licenseFile) {
+            throw new Error('ملف التراخيص غير موجود');
+          }
+          
+          const licenses = JSON.parse(licenseFile.content);
+          renderLicensesList(licenses);
+          showMessage('تم تحميل بيانات التراخيص بنجاح.', 'success');
+        } catch (error) {
+          console.error('خطأ في معالجة بيانات الترخيص:', error);
+          showMessage('حدث خطأ في تحميل بيانات التراخيص: ' + error.message, 'error');
+          
+          // محاولة استخدام الملف المحلي كخطة بديلة
+          loadLocalLicenses();
+        }
+      })
+      .catch(error => {
+        console.error('خطأ في تحميل التراخيص من GitHub:', error);
+        showMessage('فشل الاتصال بالخادم. يرجى المحاولة لاحقًا أو استخدام الملف المحلي.', 'error');
         
-        const licenses = JSON.parse(licenseFile.content);
+        // محاولة استخدام الملف المحلي كخطة بديلة
+        loadLocalLicenses();
+      })
+      .finally(() => {
+        showLoading(false);
+      });
+    } else {
+      // استخدام الملف المحلي
+      loadLocalLicenses();
+    }
+  }
+  
+  /**
+   * تحميل التراخيص من الملف المحلي
+   */
+  function loadLocalLicenses() {
+    console.log('محاولة تحميل التراخيص من الملف المحلي');
+    
+    fetch('../licenses.json')
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('فشل في تحميل ملف التراخيص المحلي');
+        }
+        return response.json();
+      })
+      .then(licenses => {
         renderLicensesList(licenses);
-        showMessage('تم تحميل بيانات التراخيص بنجاح.', 'success');
-      } catch (error) {
-        console.error('Error parsing license data:', error);
-        showMessage('حدث خطأ في تحميل بيانات التراخيص.', 'error');
-      }
-    })
-    .catch(error => {
-      console.error('Error loading licenses:', error);
-      showMessage('فشل الاتصال بالخادم. يرجى المحاولة لاحقًا.', 'error');
-    })
-    .finally(() => {
-      showLoading(false);
-    });
+        showMessage('تم تحميل بيانات التراخيص من الملف المحلي.', 'success');
+      })
+      .catch(error => {
+        console.error('خطأ في تحميل التراخيص من الملف المحلي:', error);
+        showMessage('تعذر تحميل التراخيص. يرجى التحقق من اتصالك بالإنترنت أو ملف التراخيص المحلي.', 'error');
+        
+        // عرض نموذج فارغ على الأقل
+        renderLicensesList([]);
+      })
+      .finally(() => {
+        showLoading(false);
+      });
   }
   
   /**
@@ -75,6 +182,8 @@ document.addEventListener('DOMContentLoaded', function() {
   function renderLicensesList(licenses) {
     const licensesList = document.getElementById('licenses-list');
     licensesList.innerHTML = '';
+    
+    console.log('عرض قائمة التراخيص، العدد:', licenses.length);
     
     if (licenses.length === 0) {
       licensesList.innerHTML = `
@@ -101,8 +210,9 @@ document.addEventListener('DOMContentLoaded', function() {
         status = '<span class="status-active">نشط</span>';
       }
       
-      const createdDate = new Date(license.createdAt).toLocaleDateString('ar-SA');
-      const expiryDateFormatted = expiryDate.toLocaleDateString('ar-SA');
+      // تنسيق التاريخ بشكل أفضل
+      const createdDate = formatDate(new Date(license.createdAt));
+      const expiryDateFormatted = formatDate(new Date(license.expiry));
       
       const row = document.createElement('tr');
       row.innerHTML = `
@@ -118,6 +228,7 @@ document.addEventListener('DOMContentLoaded', function() {
             `<button class="btn btn-success btn-sm action-btn restore-btn" data-key="${license.key}">استعادة</button>`
           }
           <button class="btn btn-outline-danger btn-sm action-btn delete-btn" data-key="${license.key}">حذف</button>
+          <button class="btn btn-outline-primary btn-sm action-btn copy-btn" data-key="${license.key}">نسخ</button>
         </td>
       `;
       
@@ -145,6 +256,47 @@ document.addEventListener('DOMContentLoaded', function() {
         deleteLicense(key);
       });
     });
+    
+    document.querySelectorAll('.copy-btn').forEach(btn => {
+      btn.addEventListener('click', function() {
+        const key = this.getAttribute('data-key');
+        copyToClipboard(key);
+        showMessage(`تم نسخ المفتاح: ${key}`, 'success');
+      });
+    });
+  }
+  
+  /**
+   * تنسيق التاريخ بطريقة أفضل
+   */
+  function formatDate(date) {
+    if (!(date instanceof Date) || isNaN(date)) {
+      return 'تاريخ غير صالح';
+    }
+    
+    return date.toLocaleDateString('ar-SA', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  }
+  
+  /**
+   * نسخ نص إلى الحافظة
+   */
+  function copyToClipboard(text) {
+    // إنشاء عنصر نصي مؤقت
+    const el = document.createElement('textarea');
+    el.value = text;
+    el.setAttribute('readonly', '');
+    el.style.position = 'absolute';
+    el.style.left = '-9999px';
+    document.body.appendChild(el);
+    el.select();
+    document.execCommand('copy');
+    document.body.removeChild(el);
   }
   
   /**
@@ -169,62 +321,82 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     showLoading(true);
+    console.log('إنشاء ترخيص جديد');
     
     // الحصول على التراخيص الحالية أولاً
-    fetch(`https://api.github.com/gists/${GIST_ID}`, {
-      headers: {
-        'Authorization': `token ${GITHUB_TOKEN}`,
-        'Accept': 'application/vnd.github.v3+json'
-      }
-    })
-    .then(response => response.json())
-    .then(data => {
-      let licenses = [];
-      
-      try {
-        const licenseFile = data.files['licenses.json'];
-        if (licenseFile) {
-          licenses = JSON.parse(licenseFile.content);
+    const token = getGithubToken();
+    
+    if (token) {
+      // استخدام GitHub Gist
+      fetch(`https://api.github.com/gists/${GIST_ID}`, {
+        headers: {
+          'Authorization': `token ${token}`,
+          'Accept': 'application/vnd.github.v3+json'
         }
-      } catch (error) {
-        console.error('Error parsing current licenses:', error);
-      }
-      
-      // إنشاء مفتاح ترخيص جديد
+      })
+      .then(response => response.json())
+      .then(data => {
+        let licenses = [];
+        
+        try {
+          const licenseFile = data.files['licenses.json'];
+          if (licenseFile) {
+            licenses = JSON.parse(licenseFile.content);
+          }
+        } catch (error) {
+          console.error('خطأ في تحليل التراخيص الحالية:', error);
+          // استمر مع مصفوفة فارغة
+        }
+        
+        // إنشاء مفتاح ترخيص جديد
+        const newKey = generateLicenseKey(keyLength);
+        const now = new Date();
+        const expiryDate = new Date();
+        expiryDate.setDate(now.getDate() + duration);
+        
+        // إنشاء كائن الترخيص الجديد
+        const newLicense = {
+          key: newKey,
+          name: name,
+          email: email,
+          createdAt: now.toISOString(),
+          expiry: expiryDate.toISOString(),
+          revoked: false,
+          notes: notes
+        };
+        
+        console.log('ترخيص جديد:', newLicense);
+        
+        // إضافة الترخيص الجديد إلى القائمة
+        licenses.push(newLicense);
+        
+        // حفظ التراخيص المحدثة إلى GitHub Gist
+        return updateLicenses(licenses, newKey);
+      })
+      .then((newKey) => {
+        if (newKey) {
+          showMessage(`تم إنشاء ترخيص جديد بنجاح: ${newKey}`, 'success');
+          // نسخ المفتاح إلى الحافظة تلقائياً
+          copyToClipboard(newKey);
+          licenseForm.reset();
+          loadLicenses();
+        }
+      })
+      .catch(error => {
+        console.error('خطأ في إنشاء الترخيص:', error);
+        showMessage('حدث خطأ أثناء إنشاء الترخيص. يرجى المحاولة مرة أخرى.', 'error');
+      })
+      .finally(() => {
+        showLoading(false);
+      });
+    } else {
+      // العمل بدون GitHub
       const newKey = generateLicenseKey(keyLength);
-      const now = new Date();
-      const expiryDate = new Date();
-      expiryDate.setDate(now.getDate() + duration);
-      
-      // إنشاء كائن الترخيص الجديد
-      const newLicense = {
-        key: newKey,
-        name: name,
-        email: email,
-        createdAt: now.toISOString(),
-        expiry: expiryDate.toISOString(),
-        revoked: false,
-        notes: notes
-      };
-      
-      // إضافة الترخيص الجديد إلى القائمة
-      licenses.push(newLicense);
-      
-      // حفظ التراخيص المحدثة إلى GitHub Gist
-      return updateLicenses(licenses);
-    })
-    .then(() => {
-      showMessage(`تم إنشاء ترخيص جديد بنجاح: ${generateLicenseKey(keyLength)}`, 'success');
+      showMessage(`تم إنشاء ترخيص جديد (محلي فقط): ${newKey}`, 'success');
+      copyToClipboard(newKey);
       licenseForm.reset();
-      loadLicenses();
-    })
-    .catch(error => {
-      console.error('Error creating license:', error);
-      showMessage('حدث خطأ أثناء إنشاء الترخيص. يرجى المحاولة مرة أخرى.', 'error');
-    })
-    .finally(() => {
       showLoading(false);
-    });
+    }
   }
   
   /**
@@ -236,10 +408,18 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     showLoading(true);
+    console.log('إلغاء الترخيص:', licenseKey);
+    
+    const token = getGithubToken();
+    if (!token) {
+      showMessage('لا يمكن إلغاء الترخيص بدون توكن GitHub', 'error');
+      showLoading(false);
+      return;
+    }
     
     fetch(`https://api.github.com/gists/${GIST_ID}`, {
       headers: {
-        'Authorization': `token ${GITHUB_TOKEN}`,
+        'Authorization': `token ${token}`,
         'Accept': 'application/vnd.github.v3+json'
       }
     })
@@ -261,7 +441,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         return updateLicenses(updatedLicenses);
       } catch (error) {
-        throw new Error('فشل في تحديث الترخيص');
+        throw new Error('فشل في تحديث الترخيص: ' + error.message);
       }
     })
     .then(() => {
@@ -269,8 +449,8 @@ document.addEventListener('DOMContentLoaded', function() {
       loadLicenses();
     })
     .catch(error => {
-      console.error('Error revoking license:', error);
-      showMessage('حدث خطأ أثناء إلغاء الترخيص', 'error');
+      console.error('خطأ في إلغاء الترخيص:', error);
+      showMessage('حدث خطأ أثناء إلغاء الترخيص: ' + error.message, 'error');
     })
     .finally(() => {
       showLoading(false);
@@ -282,10 +462,18 @@ document.addEventListener('DOMContentLoaded', function() {
    */
   function restoreLicense(licenseKey) {
     showLoading(true);
+    console.log('استعادة الترخيص:', licenseKey);
+    
+    const token = getGithubToken();
+    if (!token) {
+      showMessage('لا يمكن استعادة الترخيص بدون توكن GitHub', 'error');
+      showLoading(false);
+      return;
+    }
     
     fetch(`https://api.github.com/gists/${GIST_ID}`, {
       headers: {
-        'Authorization': `token ${GITHUB_TOKEN}`,
+        'Authorization': `token ${token}`,
         'Accept': 'application/vnd.github.v3+json'
       }
     })
@@ -307,7 +495,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         return updateLicenses(updatedLicenses);
       } catch (error) {
-        throw new Error('فشل في تحديث الترخيص');
+        throw new Error('فشل في تحديث الترخيص: ' + error.message);
       }
     })
     .then(() => {
@@ -315,8 +503,8 @@ document.addEventListener('DOMContentLoaded', function() {
       loadLicenses();
     })
     .catch(error => {
-      console.error('Error restoring license:', error);
-      showMessage('حدث خطأ أثناء استعادة الترخيص', 'error');
+      console.error('خطأ في استعادة الترخيص:', error);
+      showMessage('حدث خطأ أثناء استعادة الترخيص: ' + error.message, 'error');
     })
     .finally(() => {
       showLoading(false);
@@ -332,10 +520,18 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     showLoading(true);
+    console.log('حذف الترخيص:', licenseKey);
+    
+    const token = getGithubToken();
+    if (!token) {
+      showMessage('لا يمكن حذف الترخيص بدون توكن GitHub', 'error');
+      showLoading(false);
+      return;
+    }
     
     fetch(`https://api.github.com/gists/${GIST_ID}`, {
       headers: {
-        'Authorization': `token ${GITHUB_TOKEN}`,
+        'Authorization': `token ${token}`,
         'Accept': 'application/vnd.github.v3+json'
       }
     })
@@ -352,7 +548,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         return updateLicenses(updatedLicenses);
       } catch (error) {
-        throw new Error('فشل في حذف الترخيص');
+        throw new Error('فشل في حذف الترخيص: ' + error.message);
       }
     })
     .then(() => {
@@ -360,8 +556,8 @@ document.addEventListener('DOMContentLoaded', function() {
       loadLicenses();
     })
     .catch(error => {
-      console.error('Error deleting license:', error);
-      showMessage('حدث خطأ أثناء حذف الترخيص', 'error');
+      console.error('خطأ في حذف الترخيص:', error);
+      showMessage('حدث خطأ أثناء حذف الترخيص: ' + error.message, 'error');
     })
     .finally(() => {
       showLoading(false);
@@ -371,11 +567,19 @@ document.addEventListener('DOMContentLoaded', function() {
   /**
    * تحديث قائمة التراخيص في GitHub Gist
    */
-  function updateLicenses(licenses) {
+  function updateLicenses(licenses, newKey = null) {
+    console.log('تحديث قائمة التراخيص');
+    
+    const token = getGithubToken();
+    if (!token) {
+      showMessage('لا يمكن تحديث التراخيص بدون توكن GitHub', 'error');
+      return Promise.reject(new Error('لا يوجد توكن GitHub'));
+    }
+    
     return fetch(`https://api.github.com/gists/${GIST_ID}`, {
       method: 'PATCH',
       headers: {
-        'Authorization': `token ${GITHUB_TOKEN}`,
+        'Authorization': `token ${token}`,
         'Accept': 'application/vnd.github.v3+json',
         'Content-Type': 'application/json'
       },
@@ -389,9 +593,13 @@ document.addEventListener('DOMContentLoaded', function() {
     })
     .then(response => {
       if (!response.ok) {
-        throw new Error('فشل في تحديث بيانات التراخيص');
+        throw new Error('فشل في تحديث بيانات التراخيص: ' + response.status);
       }
       return response.json();
+    })
+    .then(() => {
+      console.log('تم تحديث التراخيص بنجاح');
+      return newKey; // إرجاع المفتاح الجديد إذا كان موجودًا
     });
   }
   
@@ -418,6 +626,8 @@ document.addEventListener('DOMContentLoaded', function() {
    * عرض رسالة للمستخدم
    */
   function showMessage(message, type) {
+    console.log(`رسالة (${type}):`, message);
+    
     messageContainer.textContent = message;
     messageContainer.className = '';
     messageContainer.classList.add(type);

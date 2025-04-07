@@ -1,1 +1,308 @@
- 
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>إدارة التراخيص - FBGroupMaster</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+  
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f8f9fa;
+    }
+    
+    .container {
+      max-width: 1200px;
+      padding: 20px;
+    }
+    
+    .card {
+      border: none;
+      border-radius: 10px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      margin-bottom: 20px;
+    }
+    
+    .card-header {
+      background-color: #f8f9fa;
+      border-bottom: 1px solid #e9ecef;
+      padding: 15px 20px;
+      font-weight: 600;
+    }
+    
+    .form-label {
+      font-weight: 500;
+    }
+    
+    .table {
+      vertical-align: middle;
+    }
+    
+    .action-btn {
+      margin-right: 5px;
+    }
+    
+    .status-active {
+      color: #198754;
+      font-weight: 600;
+    }
+    
+    .status-expired {
+      color: #dc3545;
+      font-weight: 600;
+    }
+    
+    .status-revoked {
+      color: #6c757d;
+      font-weight: 600;
+    }
+    
+    #message-container {
+      display: none;
+      padding: 10px 15px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      font-weight: 500;
+    }
+    
+    #message-container.success {
+      background-color: #d1e7dd;
+      color: #0f5132;
+      border: 1px solid #badbcc;
+    }
+    
+    #message-container.error {
+      background-color: #f8d7da;
+      color: #842029;
+      border: 1px solid #f5c2c7;
+    }
+    
+    #loading {
+      display: none;
+      justify-content: center;
+      align-items: center;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(255, 255, 255, 0.7);
+      z-index: 1000;
+    }
+    
+    .loading-spinner {
+      width: 3rem;
+      height: 3rem;
+    }
+    
+    .license-key {
+      font-family: monospace;
+      letter-spacing: 1px;
+    }
+    
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    /* نمط جديد - شريط حالة الاتصال */
+    .connection-status {
+      display: inline-flex;
+      align-items: center;
+      padding: 5px 10px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      margin-left: auto;
+    }
+    
+    .connection-status.online {
+      background-color: #d1e7dd;
+      color: #0f5132;
+    }
+    
+    .connection-status.offline {
+      background-color: #f8d7da;
+      color: #842029;
+    }
+    
+    .connection-status i {
+      margin-left: 5px;
+    }
+    
+    /* نمط جديد - زر إعدادات التوكن */
+    .btn-token {
+      background-color: #6c757d;
+      color: white;
+      border-radius: 20px;
+      padding: 5px 10px;
+      font-size: 0.85rem;
+    }
+    
+    .btn-token:hover {
+      background-color: #5a6268;
+      color: white;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h1>نظام إدارة التراخيص <small class="text-muted fs-5">FBGroupMaster</small></h1>
+      <div class="header-actions">
+        <button id="token-btn" class="btn btn-token">
+          <i class="bi bi-key-fill"></i> إعدادات GitHub
+        </button>
+        <div id="connection-status" class="connection-status offline">
+          <i class="bi bi-cloud-slash"></i> غير متصل
+        </div>
+      </div>
+    </div>
+    
+    <div id="message-container"></div>
+    
+    <!-- قسم إنشاء ترخيص جديد -->
+    <div class="card mb-4">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span>إنشاء ترخيص جديد</span>
+      </div>
+      <div class="card-body">
+        <form id="license-form">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label for="name" class="form-label">اسم المستخدم</label>
+              <input type="text" class="form-control" id="name" required>
+            </div>
+            <div class="col-md-6">
+              <label for="email" class="form-label">البريد الإلكتروني</label>
+              <input type="email" class="form-control" id="email" required>
+            </div>
+            <div class="col-md-4">
+              <label for="duration" class="form-label">مدة الترخيص (أيام)</label>
+              <input type="number" class="form-control" id="duration" value="365" min="1" max="3650" required>
+            </div>
+            <div class="col-md-4">
+              <label for="key-length" class="form-label">طول المفتاح (حروف)</label>
+              <select class="form-select" id="key-length">
+                <option value="24">24 (XXXX-XXXX-XXXX-XXXX-XXXX-XXXX)</option>
+                <option value="20">20 (XXXX-XXXX-XXXX-XXXX-XXXX)</option>
+                <option value="16" selected>16 (XXXX-XXXX-XXXX-XXXX)</option>
+                <option value="12">12 (XXXX-XXXX-XXXX)</option>
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label for="license-type" class="form-label">نوع الترخيص</label>
+              <select class="form-select" id="license-type">
+                <option value="standard" selected>قياسي</option>
+                <option value="premium">متميز</option>
+                <option value="business">أعمال</option>
+                <option value="unlimited">غير محدود</option>
+              </select>
+            </div>
+            <div class="col-12">
+              <label for="notes" class="form-label">ملاحظات</label>
+              <textarea class="form-control" id="notes" rows="2"></textarea>
+            </div>
+            <div class="col-12">
+              <button type="submit" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i> إنشاء ترخيص جديد
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+    
+    <!-- قسم عرض التراخيص -->
+    <div class="card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span>قائمة التراخيص</span>
+        <div>
+          <button id="export-btn" class="btn btn-sm btn-outline-secondary me-2">
+            <i class="bi bi-download"></i> تصدير
+          </button>
+          <button id="refresh-btn" class="btn btn-sm btn-outline-primary">
+            <i class="bi bi-arrow-clockwise"></i> تحديث
+          </button>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="table-responsive">
+          <table class="table table-hover">
+            <thead>
+              <tr>
+                <th>مفتاح الترخيص</th>
+                <th>المستخدم</th>
+                <th>البريد الإلكتروني</th>
+                <th>تاريخ الإنشاء</th>
+                <th>تاريخ الانتهاء</th>
+                <th>الحالة</th>
+                <th>الإجراءات</th>
+              </tr>
+            </thead>
+            <tbody id="licenses-list">
+              <tr>
+                <td colspan="7" class="text-center">جاري تحميل التراخيص...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- مؤشر التحميل -->
+  <div id="loading">
+    <div class="spinner-border loading-spinner text-primary" role="status">
+      <span class="visually-hidden">جاري التحميل...</span>
+    </div>
+  </div>
+  
+  <!-- النوافذ المنبثقة -->
+  <div class="modal fade" id="tokenModal" tabindex="-1" aria-labelledby="tokenModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="tokenModalLabel">إعدادات الاتصال بـ GitHub</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="إغلاق"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label for="github-token" class="form-label">توكن GitHub</label>
+            <div class="input-group">
+              <input type="password" class="form-control" id="github-token" placeholder="أدخل توكن GitHub">
+              <button class="btn btn-outline-secondary" type="button" id="toggle-token">
+                <i class="bi bi-eye"></i>
+              </button>
+            </div>
+            <div class="form-text">
+              هذا التوكن ضروري للوصول إلى تخزين التراخيص. سيتم حفظه محليًا فقط.
+            </div>
+          </div>
+          <div class="mb-3">
+            <label for="gist-id" class="form-label">معرف Gist</label>
+            <input type="text" class="form-control" id="gist-id" value="234b3837c2ca95e54c68c55a8bfd0e3c">
+            <div class="form-text">
+              معرف Gist الذي يحتوي على بيانات التراخيص.
+            </div>
+          </div>
+          <div class="alert alert-info">
+            <i class="bi bi-info-circle"></i> للحصول على توكن GitHub، قم بزيارة 
+            <a href="https://github.com/settings/tokens" target="_blank" rel="noopener">إعدادات التوكن</a> 
+            وإنشاء توكن جديد مع صلاحية "gist".
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+          <button type="button" class="btn btn-primary" id="save-token">حفظ الإعدادات</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="js/admin-license.js"></script>
+</body>
+</html> 

@@ -1,1 +1,38 @@
- 
+{
+  "TEST-1234-ABCD-5678-EFGH-9012": {
+    "name": "حساب اختبار",
+    "email": "test@example.com",
+    "createdAt": "2023-07-01T00:00:00Z",
+    "expiry": "2024-07-01T00:00:00Z",
+    "revoked": false,
+    "type": "قياسي",
+    "notes": "حساب للاختبار فقط"
+  },
+  "DEMO-2023-FBGM-4321-ZYXW-9876": {
+    "name": "حساب تجريبي",
+    "email": "demo@fbgroupmaster.com",
+    "createdAt": "2023-06-15T00:00:00Z",
+    "expiry": "2030-06-15T00:00:00Z",
+    "revoked": false,
+    "type": "متميز",
+    "notes": "حساب تجريبي دائم"
+  },
+  "REVK-5555-TEST-7777-VOID-9999": {
+    "name": "حساب ملغي",
+    "email": "revoked@example.com",
+    "createdAt": "2023-05-10T00:00:00Z",
+    "expiry": "2024-05-10T00:00:00Z",
+    "revoked": true,
+    "type": "قياسي",
+    "notes": "تم إلغاء هذا الحساب للاختبار"
+  },
+  "EXPR-1111-PAST-2222-DATE-3333": {
+    "name": "حساب منتهي",
+    "email": "expired@example.com",
+    "createdAt": "2022-01-01T00:00:00Z",
+    "expiry": "2023-01-01T00:00:00Z",
+    "revoked": false,
+    "type": "أعمال",
+    "notes": "حساب منتهي للاختبار"
+  }
+} 
